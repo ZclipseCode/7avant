@@ -12,6 +12,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float jumpForce = 6.5f;
     [SerializeField] float jumpCooldown = 0.25f;
     [SerializeField] float airMultiplier = 8;
+    [SerializeField] MoveCamera moveCamera;
+    [SerializeField] float slideSpeed;
+    [SerializeField] float slideTime;
     bool readyToJump = true;
     float horizontalInput;
     float verticalInput;
@@ -19,6 +22,8 @@ public class PlayerMovement : MonoBehaviour
     Rigidbody rb;
     bool grounded;
     PlayerControls playerControls;
+    float tempSpeed;
+    bool sliding;
 
     private void Awake()
     {
@@ -31,6 +36,8 @@ public class PlayerMovement : MonoBehaviour
     private void Start()
     {
         rb.freezeRotation = true;
+
+        tempSpeed = moveSpeed;
     }
 
     private void Update()
@@ -59,6 +66,17 @@ public class PlayerMovement : MonoBehaviour
             Jump();
 
             Invoke(nameof(ResetJump), jumpCooldown);
+        }
+
+        if (playerControls.Player.Slide.ReadValue<float>() > 0 && grounded && !sliding)
+        {
+            StartCoroutine(Slide());
+        }
+        else if (playerControls.Player.Slide.ReadValue<float>() <= 0 && grounded)
+        {
+            sliding = false;
+            moveCamera.SetSliding(false);
+            moveSpeed = tempSpeed;
         }
     }
 
@@ -108,6 +126,22 @@ public class PlayerMovement : MonoBehaviour
         else
         {
             rb.drag = 0;
+        }
+    }
+
+    IEnumerator Slide()
+    {
+        // change collider to reflect height
+
+        sliding = true;
+        moveCamera.SetSliding(true);
+        moveSpeed = slideSpeed;
+
+        yield return new WaitForSeconds(slideTime);
+
+        if (grounded)
+        {
+            moveSpeed = tempSpeed / 2;
         }
     }
 
